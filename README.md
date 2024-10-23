@@ -77,3 +77,7 @@ Q_Transcribe supports multiple image formats, including:
 ## Output
 
 The transcribed text is saved as individual Markdown files in the same directory as the input images, with the same base name.
+
+## Credits
+
+This code adds my folder handling and sorting logic to Andy Janco's CLI wrapper to Qwen2-VL. https://github.com/QwenLM/Qwen2-VL.
