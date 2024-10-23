@@ -13,7 +13,7 @@ def natural_sort_key(filename: str):
     """Generate a sorting key that sorts numbers in a human-friendly way."""
     return [int(part) if part.isdigit() else part for part in re.split(r'(\d+)', filename)]
 
-def process_image(image_file: Path, model, processor, prompt: str):
+def process_image(image_file: Path, model, processor, prompt: str, device: str):
     """Process a single image file."""
     output_file = image_file.with_suffix(".md")  # Set output file path
 
@@ -50,7 +50,8 @@ def process_image(image_file: Path, model, processor, prompt: str):
         return_tensors="pt",
     )
 
-    inputs = inputs.to("mps")
+    # Move inputs to the appropriate device
+    inputs = inputs.to(device)
 
     # Inference: Generate the output
     generated_ids = model.generate(**inputs, max_new_tokens=1280)
@@ -79,6 +80,17 @@ def transcribe_images_recursive(
     )
     processor = AutoProcessor.from_pretrained(model_name)
 
+    # Determine the appropriate device
+    if torch.cuda.is_available():
+        device = "cuda"
+        print("[cyan]Using CUDA for inference.[/cyan]")
+    elif torch.backends.mps.is_available():
+        device = "mps"
+        print("[cyan]Using MPS for inference.[/cyan]")
+    else:
+        device = "cpu"
+        print("[cyan]Using CPU for inference.[/cyan]")
+
     # Ensure the folder exists
     if not folder.exists():
         print("[red]The specified folder does not exist.")
@@ -99,7 +111,7 @@ def transcribe_images_recursive(
 
     # Process each image
     for image_file in track(image_files, total=len(image_files)):
-        process_image(image_file, model, processor, prompt)
+        process_image(image_file, model, processor, prompt, device)
 
 if __name__ == "__main__":
     typer.run(transcribe_images_recursive)
