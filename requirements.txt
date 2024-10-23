@@ -8,3 +8,10 @@ qwen-vl-utils
 accelerate>=0.26.0
 pdf2image
 markdown2
+docx
+exceptions
+fpdf
+python-docx
+PyPDF2
+reportlab
+qwen_vl_utils
