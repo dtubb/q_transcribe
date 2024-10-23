@@ -1,12 +1,12 @@
-# q_transcribe 📸📝: Transcribe Images with QWEN VL Models
+# q_transcribe 📸📝: Transcribe Typwritten and Handwritten Text in Images with QWEN VL Models
 
-- Flexible Input: Transcribe individual images, entire folders, or nested folders containing images.
+- Flexible Input: Transcribe individual typwritten and handwritten text in images, entire folders of images, or nested folders containing images.
 
 - Markdown Output: Extracted text from images is saved as individual Markdown files.
 
 - Model Selection: Choose between different Qwen models for transcription, including Qwen2 and Qwen 7B.
 
-q_transcribe is (really simple) Python-based command-line tool that will transcribe text from images using QWEN VL models. This tool extracts text from JPG, JPEG, PNG formats into markdown files
+q_transcribe is (really simple to use) Python-based command-line tool that will transcribe text from images using QWEN VL models. This tool extracts text from JPG, JPEG, PNG formats into markdown files.
 
 ## Installation Instructions
 
