@@ -77,9 +77,3 @@ Q_Transcribe supports multiple image formats, including:
 ## Output
 
 The transcribed text is saved as individual Markdown files in the same directory as the input images, with the same base name.
-
-## Citation
-
-Please cite as:
-
-Tubb, Daniel. q_transcribe. GitHub, 2024. https://github.com/dtubb/q_transcribe.
