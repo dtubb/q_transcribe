@@ -73,6 +73,7 @@ Q_Transcribe supports multiple image formats, including:
 - `.jpg`
 - `.jpeg`
 - `.png`
+- `.pdf` (For PDFs, it extracts each page of the PDF into a subfolder.)
 
 ## Output
 
