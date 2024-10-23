@@ -8,6 +8,7 @@ from pathlib import Path
 from PIL import Image
 import torch
 import re
+from pdf2image import convert_from_path  # Import for PDF to image conversion
 
 def natural_sort_key(filename: str):
     """Generate a sorting key that sorts numbers in a human-friendly way."""
@@ -66,13 +67,26 @@ def process_image(image_file: Path, model, processor, prompt: str, device: str):
     output_file.write_text(output_text[0])
     print(f"[green]Saved {output_file.name}")
 
+def process_pdf(pdf_file: Path, model, processor, prompt: str, device: str):
+    """Extract and process images from a PDF file, placing them in a subfolder."""
+    pdf_name = pdf_file.stem  # Get the name of the PDF without the extension
+    output_dir = pdf_file.parent / pdf_name  # Create a subfolder named after the PDF
+    output_dir.mkdir(exist_ok=True)  # Ensure the folder exists
+
+    # Convert each page of the PDF into an image
+    images = convert_from_path(pdf_file)
+    for i, image in enumerate(images):
+        image_filename = output_dir / f"{pdf_name}_{i + 1:03d}.png"  # Name like IMC_AR_1966_001.png
+        image.save(image_filename, "PNG")
+        process_image(image_filename, model, processor, prompt, device)
+
 def transcribe_images_recursive(
-    folder: Annotated[Path, typer.Argument(help="Folder containing image files or subfolders")],
+    folder: Annotated[Path, typer.Argument(help="Folder containing image or PDF files or subfolders")],
     model_name: Annotated[str, typer.Argument(help="Choose Qwen model (e.g., 'Qwen/Qwen2-VL-2B-Instruct' or 'Qwen/Qwen2-VL-7B-Instruct')")] = "Qwen/Qwen2-VL-2B-Instruct"
 ):
     prompt = """Extract text into markdown format. SAY NOTHING ELSE."""
 
-    print(f"[green]Transcribing images in {folder}")
+    print(f"[green]Transcribing images and PDFs in {folder}")
     print(f"[cyan]Using model {model_name}")
 
     model = Qwen2VLForConditionalGeneration.from_pretrained(
@@ -96,22 +110,31 @@ def transcribe_images_recursive(
         print("[red]The specified folder does not exist.")
         return
 
-    # Find all image files in the folder recursively
+    # Find all image and PDF files in the folder recursively
     image_formats = ["*.jpg", "*.jpeg", "*.png"]
+    pdf_format = ["*.pdf"]
     image_files = []
+    pdf_files = []
     for fmt in image_formats:
-        image_files.extend(folder.rglob(fmt))  # Recursively search through all subdirectories
+        image_files.extend(folder.rglob(fmt))  # Recursively search through all subdirectories for images
+    for fmt in pdf_format:
+        pdf_files.extend(folder.rglob(fmt))  # Recursively search through all subdirectories for PDFs
 
     # Sort files in natural order
     image_files.sort(key=lambda f: natural_sort_key(f.stem))
+    pdf_files.sort(key=lambda f: natural_sort_key(f.stem))
 
-    if not image_files:
-        print("[yellow]No image files found in the folder or subfolders.")
+    if not image_files and not pdf_files:
+        print("[yellow]No image or PDF files found in the folder or subfolders.")
         return
 
     # Process each image
     for image_file in track(image_files, total=len(image_files)):
         process_image(image_file, model, processor, prompt, device)
+
+    # Process each PDF
+    for pdf_file in track(pdf_files, total=len(pdf_files)):
+        process_pdf(pdf_file, model, processor, prompt, device)
 
 if __name__ == "__main__":
     typer.run(transcribe_images_recursive)
