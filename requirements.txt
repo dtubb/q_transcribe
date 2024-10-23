@@ -7,3 +7,4 @@ typing-extensions
 qwen-vl-utils
 accelerate>=0.26.0
 pdf2image
+markdown2
