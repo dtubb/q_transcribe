@@ -1,0 +1,7 @@
+typer
+rich
+transformers
+torch
+Pillow
+typing-extensions
+qwen-vl-utils
