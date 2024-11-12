@@ -45,20 +45,13 @@ def remove_duplicate_lines(texts):
         cleaned_texts.append("\n".join(lines))
     return cleaned_texts
 
-from difflib import SequenceMatcher
-import json
-
 def clean_up_text_output(combined_text, output_format, fuzzy_threshold=0.8):
-    # Join combined text list into a single string and split into lines for comparison
     lines = "\n".join(combined_text).splitlines()
     cleaned_lines = []
     prev_line = None
 
     for line in lines:
-        # Check for similarity with the previous line using the fuzzy matching threshold
-        # Split the line into significant segments (phrases) if long and check within phrases
         if prev_line:
-            # If either line is long, split into phrases for more fine-grained comparison
             prev_phrases = prev_line.split(", ") if len(prev_line) > 50 else [prev_line]
             curr_phrases = line.split(", ") if len(line) > 50 else [line]
             match_found = any(
@@ -66,27 +59,18 @@ def clean_up_text_output(combined_text, output_format, fuzzy_threshold=0.8):
                 for p in prev_phrases for q in curr_phrases
             )
             if match_found:
-                continue  # Skip line if it is highly similar to the previous line
-
+                continue
         cleaned_lines.append(line)
         prev_line = line
 
-    # Join the cleaned lines back into a single text based on the desired format
     final_output = "\n".join(cleaned_lines)
-
-    # Format-specific adjustments if needed (json, md, html, txt)
     if output_format == "json":
-        try:
-            final_output = json.dumps({"text": final_output}, indent=2)
-        except json.JSONDecodeError:
-            raise ValueError("Failed to format text as JSON.")
+        final_output = json.dumps({"text": final_output}, indent=2)
     elif output_format == "md":
         final_output = f"```\n{final_output}\n```"
     elif output_format == "html":
         final_output = "<html><body><p>{}</p></body></html>".format(final_output.replace("\n", "</p><p>"))
-
     return final_output.strip()
-
 
 def process_image(image_file: Path, model, processor, prompt: str, device: str, output_dir: Path, output_format: str, max_tokens: int, thumbnail_size: int, crop_percentages: tuple = (0, 0, 0, 0), chunk: bool = False, num_chunks: int = 3, overlap_percentage: float = 5.0, skip_transcription: bool = False):
     image = Image.open(image_file)
@@ -100,7 +84,11 @@ def process_image(image_file: Path, model, processor, prompt: str, device: str, 
         for idx, chunk in enumerate(chunks):
             chunk_label = f"{image_file.stem}_chunk_{idx+1}"
             chunk_output_file = output_dir / f"{chunk_label}.txt"
+            chunk_image_file = output_dir / f"{chunk_label}.jpg"  # Save chunk as image
             
+            chunk.save(chunk_image_file)
+            print(f"[green]Saved chunk image as {chunk_image_file}[/green]")
+
             if chunk_output_file.exists():
                 print(f"[yellow]Skipping transcription for {chunk_label} as it already exists.[/yellow]")
                 with open(chunk_output_file, 'r') as file:
@@ -118,15 +106,10 @@ def process_image(image_file: Path, model, processor, prompt: str, device: str, 
 
         if not skip_transcription:
             combined_text = remove_duplicate_lines(output_texts)
-            # Update the call to clean_up_text_output to match the new signature
             final_output = clean_up_text_output(combined_text, output_format)
             
             output_file = output_dir / f"{image_file.stem}.{output_format}"
-            if output_format == "json":
-                json_data = json.loads(final_output)
-                output_file.write_text(json.dumps(json_data, indent=2))
-            else:
-                output_file.write_text(final_output)
+            output_file.write_text(final_output)
             print(f"[green]Saved consolidated transcription {output_file.name}")
 
     elif not skip_transcription:
@@ -164,14 +147,11 @@ def transcribe_images_recursive(
     skip_transcription: Annotated[bool, typer.Option(help="Skip transcription and model loading for testing image processing")] = False
 ):
     if prompt is None:
-        if output_format == "md":
-            prompt = "Extract text lines. RETURN ONLY VALID MARKDOWN. SAY NOTHING ELSE."
-        elif output_format == "json":
-            prompt = "Extract text lines. RETURN ONLY VALID JSON. SAY NOTHING ELSE."
-        elif output_format == "txt":
-            prompt = "Extract text lines. RETURN ONLY PLAIN TEXT. SAY NOTHING ELSE."
-        else:
-            prompt = "Extract text lines. RETURN ONLY VALID HTML. SAY NOTHING ELSE."
+        prompt = {
+            "md": "Extract all text. RETURN ONLY VALID MARKDOWN. SAY NOTHING ELSE.",
+            "json": "Extract all text. RETURN ONLY VALID JSON. SAY NOTHING ELSE.",
+            "txt": "Extract all text. RETURN ONLY PLAIN TEXT. SAY NOTHING ELSE."
+        }.get(output_format, "Extract all text. RETURN ONLY VALID HTML. SAY NOTHING ELSE.")
     
     crop_percentages_tuple = tuple(map(int, crop_percentages.split(',')))
     print(f"[green]Transcribing images and PDFs in {folder} with {output_format} format.")
