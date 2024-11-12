@@ -86,6 +86,18 @@ q_transcribe supports the following image formats:
 - `.png`
 - `.pdf` (For PDFs, each page is extracted into individual images and saved in a subfolder.)
 
+### Chunking
+
+- **--chunk**: Enable chunking of images, splitting them into multiple overlapping parts for finer transcription. Each chunk is processed independently, improving accuracy for large or complex images.
+- **--num_chunks** (int): Specifies the number of chunks to divide each image into when chunking is enabled. Default is `3`.
+- **--overlap_percentage** (float): Specifies the percentage overlap between chunks. Helps retain context across chunk boundaries. Default is `5.0`.
+
+Example usage with chunking:
+
+```bash
+python q_transcribe.py ./input_folder --model_name="Qwen/Qwen2-VL-2B-Instruct" --chunk --num_chunks=4 --overlap_percentage=3.0
+```
+
 ## Output
 
 The transcribed text is saved as individual Markdown or HTML files in designated output directories. Files are named after the input images, with suffixes if specified.
